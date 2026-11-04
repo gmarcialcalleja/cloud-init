@@ -504,6 +504,24 @@ class TestInit:
             ):
                 assert not self.tmpdir.join(path).exists()
 
+    @pytest.mark.parametrize(
+        "cached_config",
+        [
+            pytest.param("", id="empty"),
+            pytest.param("{", id="truncated-json"),
+            pytest.param("not json", id="malformed-json"),
+        ],
+    )
+    def test_write_network_config_json_with_invalid_cache(self, cached_config):
+        net_cfg = {"version": 2, "ethernets": {}}
+        cache_path = self.init.paths.get_ipath_cur("network_config")
+        write_file(cache_path, cached_config)
+
+        self.init._write_network_config_json(net_cfg)
+
+        with open(cache_path, encoding="utf-8") as cache_file:
+            assert json.load(cache_file) == net_cfg
+
     @mock.patch("cloudinit.distros.ubuntu.Distro")
     @mock.patch.dict(
         sources.DataSource.default_update_events,
